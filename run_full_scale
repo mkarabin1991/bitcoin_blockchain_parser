@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#Step 1 Run parser
+echo "Run Parser... "
+counter=0
+for f in "path for file with blocks"/blk*.dat
+do
+	#echo $f
+	echo "Block:" $counter
+	counter=$((counter+1))
+	python bitcoin_parser.py $f
+done
+
+#Step 2 run fixer (tid increment)
+echo "Fixing tid... "
+python fix_tid_samefile_transactions.py "path for output fixed file"/transactions_step2.csv "path for file with results from step 1"/transactions.csv
+python fix_tid_samefile_inputs.py "path for output fixed file"/inputs_step2.csv "path for file with results from step 1"/inputs.csv
+python fix_tid_samefile_outputs.py "path for output fixed file"/outputs_step2.csv "path for file with results from step 1"/outputs.csv
+
+#Step 3 run fixer 2 (copy thash in outputs file regarding tid)
+echo "Fixing thash... "
+python fix_thash.py "path for output fixed file"/outputs_step3.csv "path for outputs_step2.csv file"/outputs_step2.csv "path for transactions_step2.csv file"/transactions_step2.csv
+
+#Step 4 merge inputs_step2.csv and outputs_step3.csv
+echo "Merged inputs-outputs files... "
+python merge_inputs-outputs.py "path for inputs.csv file"/inputs_step2.csv "path for outputs.csv file"/outputs_step3.csv "path for merged final file"/final_file.csv
+
+#Step 5 Sort the final csv file with key=[iid,hash]
+#If the file is very big, split and then short -m
+
+#Step 6 finding corresponding output for an input. comparing 2 continious lines
+python final_form.py "path to the sorted-merged file from the previous step" "path to the output final file"
+
+#Step 7
+#Sort on (-n) tid the file and fix the timestamp (each unique tid must have as timestamp the time of it's outputs)
